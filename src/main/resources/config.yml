@@ -1,0 +1,9 @@
+directoryPath: "D:\\test"
+searchConfigs:
+  - file: "abc.config"
+    searchText: "name"
+    expectResult: "xiaoming"
+  - file: "cba.config"
+    searchText: "age"
+    expectResult: "23"
+outputPath: "checkResult.txt"
