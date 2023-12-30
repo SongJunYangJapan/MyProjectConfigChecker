@@ -28,10 +28,22 @@ public class ConfigFileScanner {
 
             Map<File, List<String>> foundFiles = new HashMap<>();
 
-            Files.walkFileTree(Paths.get(directoryPath), new SimpleFileVisitor<Path>() {
+            Files.walkFileTree(Paths.get(directoryPath), new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult preVisitDirectory(Path dir, BasicFileAttributes attrs) throws IOException {
+                    // 获取目录名称
+                    String dirName = dir.getFileName().toString();
+                    List<String> excludedDirectories = Arrays.asList(".idea", ".gradle", "build", "gradle", "out"); // 替换为实际要排除的目录名称
+                    // 检查当前目录是否在排除列表中
+                    if (excludedDirectories.contains(dirName)) {
+                        return FileVisitResult.SKIP_SUBTREE; // 跳过整个子树
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
-                    if (!file.toString().endsWith(".java")) {
+                    if (!file.toString().endsWith(".java") && !file.toString().endsWith(".xml") && !file.toString().endsWith(".csv")) {
                         String fileName = file.getFileName().toString();
 
                         // 使用迭代器避免在遍历时修改列表
@@ -69,19 +81,35 @@ public class ConfigFileScanner {
         try (BufferedReader reader = new BufferedReader(new FileReader(file))) {
             String currentLine;
             while ((currentLine = reader.readLine()) != null) {
-                if (currentLine.contains(searchText)) {
-                    String nextLine = reader.readLine();
-                    result.add("Current line: " + currentLine);
-                    if (nextLine != null) {
-                        result.add("Next line: " + nextLine);
-                        if (!currentLine.contains(expectResult) && !nextLine.contains(expectResult)) {
-                            result.add("Wrong config!");
-                        } else {
-                            result.add("Correct config!");
+                if (expectResult.contains("<>")) {
+                    expectResult = expectResult.substring(2, expectResult.length());
+                    if (currentLine.contains(searchText)) {
+                        String nextLine = reader.readLine();
+                        result.add("Current line: " + currentLine);
+                        if (nextLine != null) {
+                            result.add("Next line: " + nextLine);
+                            if (currentLine.contains(expectResult) || nextLine.contains(expectResult)) {
+                                result.add("Wrong config!Should not be " + expectResult);
+                            }
                         }
+                        break; // 找到 searchText 后就跳出循环
                     }
-                    break; // 找到 searchText 后就跳出循环
+                } else {
+                    if (currentLine.contains(searchText)) {
+                        String nextLine = reader.readLine();
+                        result.add("Current line: " + currentLine);
+                        if (nextLine != null) {
+                            result.add("Next line: " + nextLine);
+                            if (!currentLine.contains(expectResult) && !nextLine.contains(expectResult)) {
+                                result.add("Wrong config!The right config should be " + expectResult);
+                            } else {
+                                result.add("Correct config!");
+                            }
+                        }
+                        break; // 找到 searchText 后就跳出循环
+                    }
                 }
+
             }
         }
         return result;

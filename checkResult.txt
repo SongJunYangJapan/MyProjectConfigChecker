@@ -1,10 +1,10 @@
 File: cba.config
 Current line: age
 Next line:  22
-Wrong config!
+Wrong config!The right config should be 23
 ---
 File: abc.config
 Current line: name
 Next line:  xiaoming
-Correct config!
+Wrong config!Should not be xiaoming
 ---

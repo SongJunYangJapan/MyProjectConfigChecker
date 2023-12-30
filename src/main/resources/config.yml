@@ -2,7 +2,7 @@ directoryPath: "D:\\test"
 searchConfigs:
   - file: "abc.config"
     searchText: "name"
-    expectResult: "xiaoming"
+    expectResult: "<>xiaoming"
   - file: "cba.config"
     searchText: "age"
     expectResult: "23"
