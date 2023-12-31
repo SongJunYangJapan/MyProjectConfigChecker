@@ -45,8 +45,8 @@ public class ConfigFileScanner {
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
                     if (!file.toString().endsWith(".java") && !file.toString().endsWith(".xml") && !file.toString().endsWith(".csv")) {
                         String fileName = file.getFileName().toString();
+                        List<SearchConfig> matchedConfigs = new ArrayList<>();
 
-                        // 使用迭代器避免在遍历时修改列表
                         Iterator<SearchConfig> iterator = searchConfigList.iterator();
                         while (iterator.hasNext()) {
                             SearchConfig searchConfig = iterator.next();
@@ -54,11 +54,13 @@ public class ConfigFileScanner {
                                 List<String> lines = findLines(file.toFile(), searchConfig.getSearchText(), searchConfig.getExpectResult());
                                 if (!lines.isEmpty()) {
                                     foundFiles.computeIfAbsent(file.toFile(), k -> new ArrayList<>()).addAll(lines);
+                                    matchedConfigs.add(searchConfig); // 添加到匹配列表中
                                 }
-                                iterator.remove(); // 移除已经处理的配置
-                                break; // 匹配到一个文件后就跳出循环
                             }
                         }
+
+                        // 移除所有匹配的配置
+                        searchConfigList.removeAll(matchedConfigs);
 
                         if (searchConfigList.isEmpty()) {
                             return FileVisitResult.TERMINATE; // 所有配置都已处理，提前终止遍历
@@ -67,6 +69,12 @@ public class ConfigFileScanner {
                     return FileVisitResult.CONTINUE;
                 }
             });
+
+            // 在遍历完成后检查未处理的配置
+            for (SearchConfig searchConfig : searchConfigList) {
+                String notFoundMessage = String.format("未找到%s文件的%s配置", searchConfig.getFile(), searchConfig.getSearchText());
+                foundFiles.computeIfAbsent(new File(searchConfig.getFile()), k -> new ArrayList<>()).add(notFoundMessage);
+            }
 
             // 写入到TXT文件
             writeResultsToFile(foundFiles, outputPath);
@@ -122,7 +130,7 @@ public class ConfigFileScanner {
                 for (String line : entry.getValue()) {
                     out.println(line);
                 }
-                out.println("---"); // 添加分隔符以区分不同文件的输出
+                out.println("---------"); // 添加分隔符以区分不同文件的输出
             }
         }
     }
